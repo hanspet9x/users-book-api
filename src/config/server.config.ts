@@ -1,6 +1,6 @@
 import { getEnv } from ".";
 
-export const Config = {
+export const ServerConfig = {
     SERVER_PORT: getEnv('SERVER_PORT'),
     SERVER_PATH: getEnv('SERVER_PATH'),
 }
