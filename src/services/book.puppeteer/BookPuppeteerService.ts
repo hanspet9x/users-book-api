@@ -1,29 +1,30 @@
 import puppeteer from "puppeteer";
 import { PuppeteerConfig } from "../../config/puppeteer.config";
 import ResponseError from "../response/ResponseError";
+import { ICheckoutResponse } from "./interface/checkout.types";
 import { IGenreResponse } from "./interface/genre.types";
-class PuppeteerService {
-  static service: PuppeteerService;
+class BookPuppeteerService {
+  static service: BookPuppeteerService;
   static browser: puppeteer.Browser;
   static url: string;
   static MODAL_TIMEOUT: number = 3000;
   static BOOK_NOT_FOUND: string = "Book not found";
 
   static async getInstance(url: string) {
-    PuppeteerService.url = url;
-    if (PuppeteerService.browser) {
+    BookPuppeteerService.url = url;
+    if (BookPuppeteerService.browser) {
       return this.service;
     }
     try {
-      PuppeteerService.service = new PuppeteerService();
-      PuppeteerService.browser = await puppeteer.launch({
+      BookPuppeteerService.service = new BookPuppeteerService();
+      BookPuppeteerService.browser = await puppeteer.launch({
         headless: true,
         args: ["--disable-setuid-sandbox"],
         ignoreHTTPSErrors: true,
       });
-      return PuppeteerService.service;
+      return BookPuppeteerService.service;
     } catch (error) {
-      throw PuppeteerService.service.processError(error);
+      throw BookPuppeteerService.service.processError(error);
     }
   }
 
@@ -33,7 +34,7 @@ class PuppeteerService {
     lifecycle?: puppeteer.PuppeteerLifeCycleEvent
   ) {
     try {
-      const page = await PuppeteerService.browser.newPage();
+      const page = await BookPuppeteerService.browser.newPage();
       await page.goto(url, {
         waitUntil: lifecycle || "networkidle2",
         timeout: PuppeteerConfig.PAGE_TIMEOUT,
@@ -48,7 +49,7 @@ class PuppeteerService {
   async getGenreProps(): Promise<IGenreResponse[]> {
     try {
       const page = await this.getPage(
-        PuppeteerService.url,
+        BookPuppeteerService.url,
         "div.categoryContainer"
       );
       return page.$$eval("div.category", (categories) => {
@@ -68,7 +69,11 @@ class PuppeteerService {
 
   async getCartURL(genreURL: string) {
     try {
-      const page = await this.getPage(genreURL, "div.pollContents", "domcontentloaded");
+      const page = await this.getPage(
+        genreURL,
+        "div.pollContents",
+        "domcontentloaded"
+      );
       await this.closeSignInModal(page);
       const bookId = await this.getRandomBookId(page);
       await this.gotoAmazon(bookId, page);
@@ -85,7 +90,7 @@ class PuppeteerService {
       return page.$$eval("div.tooltipTrigger", (books) => {
         // link: book.querySelector("[data-resource-id]"),
         const random = Math.floor(Math.random() * books.length);
-        console.log('Book size ='+books.length+' book rand='+random)
+        console.log("Book size =" + books.length + " book rand=" + random);
         const bookId = (books[random] as HTMLElement).dataset.resourceId;
         return `[data-resource-id="${bookId}"]`;
       });
@@ -96,11 +101,11 @@ class PuppeteerService {
 
   private async closeSignInModal(page: puppeteer.Page) {
     try {
-      await page.waitForTimeout(PuppeteerService.MODAL_TIMEOUT);
+      await page.waitForTimeout(BookPuppeteerService.MODAL_TIMEOUT);
       await page.screenshot({ path: "hover.png" });
-      const button = await page.$('.modal__close > button.gr-iconButton');
-      if(button) {
-        await button.evaluate(node => (node as HTMLElement).click())
+      const button = await page.$(".modal__close > button.gr-iconButton");
+      if (button) {
+        await button.evaluate((node) => (node as HTMLElement).click());
       }
       await page.screenshot({ path: "hover2.png" });
     } catch (error) {
@@ -108,63 +113,73 @@ class PuppeteerService {
     }
   }
 
-
   private async gotoAmazonViaHover(randomBookId: string, page: puppeteer.Page) {
     try {
       const toolTipContainer = await page.$(randomBookId);
       await page.waitForTimeout(1000);
       await toolTipContainer?.hover();
-      await toolTipContainer?.waitForSelector('section');
+      await toolTipContainer?.waitForSelector("section");
       const amazonClickEvent = toolTipContainer?.evaluateHandle((el) => {
-        const amazonLink = el?.querySelector('a#buyButton') as HTMLAnchorElement;
-        amazonLink.target = '';
-        amazonLink.rel = '';
+        const amazonLink = el?.querySelector(
+          "a#buyButton"
+        ) as HTMLAnchorElement;
+        amazonLink.target = "";
+        amazonLink.rel = "";
         return amazonLink.click();
-        
       });
-      await Promise.all([page.waitForNavigation(), amazonClickEvent])
-      page.screenshot({path: 'hover4.png'});
+      await Promise.all([page.waitForNavigation(), amazonClickEvent]);
+      page.screenshot({ path: "hover4.png" });
     } catch (error) {
       throw this.processError(error);
     }
-  }  
+  }
 
   private async gotoAmazon(randomBookId: string, page: puppeteer.Page) {
     try {
       //hover to odisplay the amazon tooltip
-      await Promise.all([page.waitForNavigation(), page.click(randomBookId)])
+      await Promise.all([page.waitForNavigation(), page.click(randomBookId)]);
       const amazonLinkEvent = page.evaluate(() => {
-        const amazonLink = document.querySelector('a#buyButton') as HTMLAnchorElement;
-        amazonLink.target = '';
-        amazonLink.rel = '';
+        const amazonLink = document.querySelector(
+          "a#buyButton"
+        ) as HTMLAnchorElement;
+        amazonLink.target = "";
+        amazonLink.rel = "";
         return amazonLink.click();
-      })
+      });
 
       await Promise.all([page.waitForNavigation(), amazonLinkEvent]);
-      page.screenshot({path: 'hover4.png'});
+      page.screenshot({ path: "hover4.png" });
     } catch (error) {
       console.error((error as any).message);
-      throw this.processError(new ResponseError(PuppeteerService.BOOK_NOT_FOUND, 404));
+      throw this.processError(
+        new ResponseError(BookPuppeteerService.BOOK_NOT_FOUND, 404)
+      );
     }
   }
 
-  private async addToCart(page: puppeteer.Page){
+  private async addToCart(page: puppeteer.Page) {
     const cartEvent = page.evaluate(() => {
-      const button = document.querySelector('input#add-to-cart-button') as HTMLInputElement;
+      const button = document.querySelector(
+        "input#add-to-cart-button"
+      ) as HTMLInputElement;
       return button.click();
     });
     await Promise.all([page.waitForNavigation(), cartEvent]);
-    page.screenshot({path: 'hover5.png'});
-  }  
-  
-  private async getCheckOutURL(page: puppeteer.Page){
+    page.screenshot({ path: "hover5.png" });
+  }
+
+  private async getCheckOutURL(
+    page: puppeteer.Page
+  ): Promise<ICheckoutResponse> {
     const checkoutEvent = page.evaluate(() => {
-      const button = document.querySelector('input[name="proceedToRetailCheckout"]') as HTMLInputElement;
+      const button = document.querySelector(
+        'input[name="proceedToRetailCheckout"]'
+      ) as HTMLInputElement;
       return button.click();
     });
     await Promise.all([page.waitForNavigation(), checkoutEvent]);
-    page.screenshot({path: 'hover6.png'});
-    return page.url();
+    page.screenshot({ path: "hover6.png" });
+    return { chkoutURL: page.url() };
   }
 
   private processError(error: Error | any) {
@@ -176,4 +191,4 @@ class PuppeteerService {
   }
 }
 
-export default PuppeteerService;
+export default BookPuppeteerService;
