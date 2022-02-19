@@ -4,5 +4,6 @@ import PuppeteerService from "./services/puppeteer/PuppeteerService";
 (async() => {
     const puppet = await PuppeteerService.getInstance(BookConfig.BOOK_URL);
     const props = await puppet.getGenreProps();
-    console.log(props);
+    const books = await puppet.getCartURL(props[0].link || '');
+    console.log(books); 
 })(); 
