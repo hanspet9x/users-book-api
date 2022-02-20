@@ -13,6 +13,10 @@ export const ResponseService = {
   sendData(response: Response, data: any, status: number) {
     response.status(status).json(responseFormat(false, data, ''));
   },
+  
+  send200(response: Response, data: any) {
+    response.status(200).json(responseFormat(false, data, ''));
+  },
 
 
 };

@@ -9,12 +9,14 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
+    "joi": "^17.6.0",
     "puppeteer": "^13.3.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
     "@types/dotenv": "^8.2.0",
     "@types/express": "^4.17.13",
+    "@types/joi": "^17.2.3",
     "@types/puppeteer": "^5.4.4",
     "eslint-config-google": "^0.14.0",
     "nodemon": "^2.0.15",
