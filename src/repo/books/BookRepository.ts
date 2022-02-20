@@ -1,31 +1,40 @@
 import puppeteer from "puppeteer";
 import { PuppeteerConfig } from "../../config/puppeteer.config";
-import ResponseError from "../response/ResponseError";
+import ResponseError from "../../services/response/ResponseError";
 import { ICheckoutResponse } from "./interface/checkout.types";
 import { IGenreResponse } from "./interface/genre.types";
-class BookPuppeteerService {
-  static service: BookPuppeteerService;
+class BookRepository {
+  static service: BookRepository;
   static browser: puppeteer.Browser;
   static url: string;
   static MODAL_TIMEOUT: number = 3000;
   static BOOK_NOT_FOUND: string = "Book not found";
+  static PAGE_REQUEST_TIMEOUT: number = 0;
 
-  static async getInstance(url: string) {
-    BookPuppeteerService.url = url;
-    if (BookPuppeteerService.browser) {
+  static async getInstance(url: string, pageTimeout?: number){
+    BookRepository.url = url;
+    BookRepository.PAGE_REQUEST_TIMEOUT = pageTimeout || PuppeteerConfig.PAGE_TIMEOUT;
+    if (BookRepository.browser) {
       return this.service;
     }
     try {
-      BookPuppeteerService.service = new BookPuppeteerService();
-      BookPuppeteerService.browser = await puppeteer.launch({
+      BookRepository.service = new BookRepository();
+      BookRepository.browser = await puppeteer.launch({
         headless: true,
-        args: ["--disable-setuid-sandbox"],
         ignoreHTTPSErrors: true,
       });
-      return BookPuppeteerService.service;
+      return BookRepository.service;
     } catch (error) {
-      throw BookPuppeteerService.service.processError(error);
+      throw BookRepository.service.processError(error);
     }
+  }
+
+  static resetTimeout() {
+    BookRepository.PAGE_REQUEST_TIMEOUT = PuppeteerConfig.PAGE_TIMEOUT
+  }
+
+  static increaseTimeout(timeout: number) {
+    BookRepository.PAGE_REQUEST_TIMEOUT = timeout;
   }
 
   async getPage(
@@ -34,10 +43,10 @@ class BookPuppeteerService {
     lifecycle?: puppeteer.PuppeteerLifeCycleEvent
   ) {
     try {
-      const page = await BookPuppeteerService.browser.newPage();
+      const page = await BookRepository.browser.newPage();
       await page.goto(url, {
         waitUntil: lifecycle || "networkidle2",
-        timeout: PuppeteerConfig.PAGE_TIMEOUT,
+        timeout: BookRepository.PAGE_REQUEST_TIMEOUT,
       });
       await page.waitForSelector(waitForselector);
       return page;
@@ -49,7 +58,7 @@ class BookPuppeteerService {
   async getGenreProps(): Promise<IGenreResponse[]> {
     try {
       const page = await this.getPage(
-        BookPuppeteerService.url,
+        BookRepository.url,
         "div.categoryContainer"
       );
       return page.$$eval("div.category", (categories) => {
@@ -101,7 +110,7 @@ class BookPuppeteerService {
 
   private async closeSignInModal(page: puppeteer.Page) {
     try {
-      await page.waitForTimeout(BookPuppeteerService.MODAL_TIMEOUT);
+      await page.waitForTimeout(BookRepository.MODAL_TIMEOUT);
       await page.screenshot({ path: "hover.png" });
       const button = await page.$(".modal__close > button.gr-iconButton");
       if (button) {
@@ -152,7 +161,7 @@ class BookPuppeteerService {
     } catch (error) {
       console.error((error as any).message);
       throw this.processError(
-        new ResponseError(BookPuppeteerService.BOOK_NOT_FOUND, 404)
+        new ResponseError(BookRepository.BOOK_NOT_FOUND, 404)
       );
     }
   }
@@ -191,4 +200,4 @@ class BookPuppeteerService {
   }
 }
 
-export default BookPuppeteerService;
+export default BookRepository;
