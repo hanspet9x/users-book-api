@@ -8,12 +8,13 @@ class BookRepository {
   static browser: puppeteer.Browser;
   static url: string;
   static MODAL_TIMEOUT: number = 3000;
-  static BOOK_NOT_FOUND: string = "Book not found";
   static PAGE_REQUEST_TIMEOUT: number = 0;
 
-  static async getInstance(url: string, pageTimeout?: number){
+  static BOOK_NOT_FOUND: string = "Book not found";
+  static PAGE_TIMEOUT_MESSAGE = "Page timeout";
+
+  static async getInstance(url: string){
     BookRepository.url = url;
-    BookRepository.PAGE_REQUEST_TIMEOUT = pageTimeout || PuppeteerConfig.PAGE_TIMEOUT;
     if (BookRepository.browser) {
       return this.service;
     }
@@ -33,8 +34,8 @@ class BookRepository {
     BookRepository.PAGE_REQUEST_TIMEOUT = PuppeteerConfig.PAGE_TIMEOUT
   }
 
-  static increaseTimeout(timeout: number) {
-    BookRepository.PAGE_REQUEST_TIMEOUT = timeout;
+  static increaseTimeoutByRetry(retry: number) {
+    BookRepository.PAGE_REQUEST_TIMEOUT = PuppeteerConfig.PAGE_TIMEOUT * retry;
   }
 
   async getPage(
@@ -99,7 +100,6 @@ class BookRepository {
       return page.$$eval("div.tooltipTrigger", (books) => {
         // link: book.querySelector("[data-resource-id]"),
         const random = Math.floor(Math.random() * books.length);
-        console.log("Book size =" + books.length + " book rand=" + random);
         const bookId = (books[random] as HTMLElement).dataset.resourceId;
         return `[data-resource-id="${bookId}"]`;
       });
@@ -159,10 +159,7 @@ class BookRepository {
       await Promise.all([page.waitForNavigation(), amazonLinkEvent]);
       page.screenshot({ path: "hover4.png" });
     } catch (error) {
-      console.error((error as any).message);
-      throw this.processError(
-        new ResponseError(BookRepository.BOOK_NOT_FOUND, 404)
-      );
+      throw new ResponseError(BookRepository.BOOK_NOT_FOUND, ResponseError.NOT_FOUND)
     }
   }
 
@@ -192,11 +189,10 @@ class BookRepository {
   }
 
   private processError(error: Error | any) {
-    console.error(error);
     if (error instanceof puppeteer.errors.TimeoutError) {
-      return new ResponseError(PuppeteerConfig.PAGE_TIMEOUT_SIGNAL, 408);
+      return new ResponseError(BookRepository.PAGE_TIMEOUT_MESSAGE, ResponseError.REQUEST_TIMEOUT);
     }
-    return new ResponseError(error.message, 417);
+    return new ResponseError(error.message, ResponseError.UNPROCESSABLE);
   }
 }
 
