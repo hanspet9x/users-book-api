@@ -1,4 +1,4 @@
-import ResponseError from "../services/response/ResponseError";
+import ResponseError from '../services/response/ResponseError';
 
 export interface IServiceResponse<T> {
     hasError: boolean;

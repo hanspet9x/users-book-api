@@ -1,3 +1,3 @@
 export interface ICheckoutResponse {
-    chkoutURL: string;
+    checkoutURL: string;
 }

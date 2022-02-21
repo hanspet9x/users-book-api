@@ -1,32 +1,32 @@
-import puppeteer from "puppeteer";
-import { PuppeteerConfig } from "../../config/puppeteer.config";
-import ResponseError from "../../services/response/ResponseError";
-import { ICheckoutResponse } from "./interface/checkout.types";
-import { IGenreResponse } from "./interface/genre.types";
+import puppeteer from 'puppeteer';
+import {PuppeteerConfig} from '../../config/puppeteer.config';
+import ResponseError from '../../services/response/ResponseError';
+import {ICheckoutResponse} from './interface/checkout.types';
+import {IGenreResponse} from './interface/genre.types';
 class BookRepository {
   static service: BookRepository;
   static browser: puppeteer.Browser;
   static MODAL_TIMEOUT = 3000;
   static PAGE_REQUEST_TIMEOUT = 0;
 
-  static BOOK_NOT_FOUND = "Book not found";
-  static PAGE_TIMEOUT_MESSAGE = "Page timeout";
+  static BOOK_NOT_FOUND = 'Book not found';
+  static PAGE_TIMEOUT_MESSAGE = 'Page timeout';
 
-  static BOOK_URL = "https://www.goodreads.com/choiceawards/best-books-2020";
+  static BOOK_URL = 'https://www.goodreads.com/choiceawards/best-books-2020';
 
-  static GENRE_PAGE = "div.categoryContainer";
-  static GENRE_CATEGORY = "div.category";
-  static GENRE_NAME = ".category__copy";
-  static GENRE_IMAGE = ".category__winnerImage";
-  static GENRE_LINK = "a";
-  static BOOKS_PAGE = "div.pollContents";
-  static BOOK_CONTAINER = "div.tooltipTrigger";
-  static PAGE_MODAL_CLOSE_BUTTON = ".modal__close > button.gr-iconButton";
+  static GENRE_PAGE = 'div.categoryContainer';
+  static GENRE_CATEGORY = 'div.category';
+  static GENRE_NAME = '.category__copy';
+  static GENRE_IMAGE = '.category__winnerImage';
+  static GENRE_LINK = 'a';
+  static BOOKS_PAGE = 'div.pollContents';
+  static BOOK_CONTAINER = 'div.tooltipTrigger';
+  static PAGE_MODAL_CLOSE_BUTTON = '.modal__close > button.gr-iconButton';
 
-  static AMAZON_ADD_TO_CART = "input#add-to-cart-button";
+  static AMAZON_ADD_TO_CART = 'input#add-to-cart-button';
   static AMAZON_GOTO_CHECKOUT = 'input[name="proceedToRetailCheckout"]';
-  static GOTO_AMAZON = "a#buyButton";
-  static BOOK_RANDOM_ID_PREFIX = "data-resource-id";
+  static GOTO_AMAZON = 'a#buyButton';
+  static BOOK_RANDOM_ID_PREFIX = 'data-resource-id';
 
   static async getInstance() {
     if (BookRepository.browser) {
@@ -60,14 +60,14 @@ class BookRepository {
   }
 
   async getPage(
-    url: string,
-    waitForselector: string,
-    lifecycle?: puppeteer.PuppeteerLifeCycleEvent
+      url: string,
+      waitForselector: string,
+      lifecycle?: puppeteer.PuppeteerLifeCycleEvent,
   ) {
     try {
       const page = await BookRepository.browser.newPage();
       await page.goto(url, {
-        waitUntil: lifecycle || "networkidle2",
+        waitUntil: lifecycle || 'networkidle2',
         timeout: BookRepository.PAGE_REQUEST_TIMEOUT,
       });
       await page.waitForSelector(waitForselector);
@@ -80,28 +80,28 @@ class BookRepository {
   async getGenreProps(): Promise<IGenreResponse[]> {
     try {
       const page = await this.getPage(
-        BookRepository.BOOK_URL,
-        BookRepository.GENRE_PAGE
+          BookRepository.BOOK_URL,
+          BookRepository.GENRE_PAGE,
       );
       return page.$$eval(
-        BookRepository.GENRE_CATEGORY,
-        (categories, LINK, NAME, IMAGE) => {
-          return categories.map((category, index) => ({
-            link: (
+          BookRepository.GENRE_CATEGORY,
+          (categories, LINK, NAME, IMAGE) => {
+            return categories.map((category, index) => ({
+              link: (
               category.querySelector(
-                LINK as string
+                LINK as string,
               ) as HTMLHyperlinkElementUtils | null
-            )?.href,
-            name: category.querySelector(NAME as string)?.textContent?.trim(),
-            imgURL: (
+              )?.href,
+              name: category.querySelector(NAME as string)?.textContent?.trim(),
+              imgURL: (
               category.querySelector(IMAGE as string) as HTMLImageElement
-            ).src,
-            index,
-          }));
-        },
-        BookRepository.GENRE_LINK,
-        BookRepository.GENRE_NAME,
-        BookRepository.GENRE_IMAGE
+              ).src,
+              index,
+            }));
+          },
+          BookRepository.GENRE_LINK,
+          BookRepository.GENRE_NAME,
+          BookRepository.GENRE_IMAGE,
       );
     } catch (error) {
       throw this.processError(error);
@@ -125,23 +125,23 @@ class BookRepository {
 
   async getSelectedGenrePage(genreURL: string) {
     return await this.getPage(
-      genreURL,
-      BookRepository.BOOKS_PAGE,
-      "domcontentloaded"
+        genreURL,
+        BookRepository.BOOKS_PAGE,
+        'domcontentloaded',
     );
   }
 
   async closeSignInModal(page: puppeteer.Page) {
     try {
       await page.waitForTimeout(BookRepository.MODAL_TIMEOUT);
-      await page.screenshot({ path: "hover.png" });
+      await page.screenshot({path: 'hover.png'});
       const button = await page.$(BookRepository.PAGE_MODAL_CLOSE_BUTTON);
       if (button) {
         await button.evaluate((node) => (node as HTMLElement).click());
-        await page.screenshot({ path: "hover2.png" });
+        await page.screenshot({path: 'hover2.png'});
         return true;
       }
-      await page.screenshot({ path: "hover2b.png" });
+      await page.screenshot({path: 'hover2b.png'});
       return false;
     } catch (error) {
       throw this.processError(error);
@@ -151,14 +151,14 @@ class BookRepository {
   async getRandomBookId(page: puppeteer.Page) {
     try {
       return page.$$eval(
-        BookRepository.BOOK_CONTAINER,
-        (books, BOOK_RANDOM_ID_PREFIX) => {
+          BookRepository.BOOK_CONTAINER,
+          (books, BOOK_RANDOM_ID_PREFIX) => {
           // link: book.querySelector("[data-resource-id]"),
-          const random = Math.floor(Math.random() * books.length);
-          const bookId = (books[random] as HTMLElement).dataset.resourceId;
-          return `[${BOOK_RANDOM_ID_PREFIX}="${bookId}"]`;
-        },
-        BookRepository.BOOK_RANDOM_ID_PREFIX
+            const random = Math.floor(Math.random() * books.length);
+            const bookId = (books[random] as HTMLElement).dataset.resourceId;
+            return `[${BOOK_RANDOM_ID_PREFIX}="${bookId}"]`;
+          },
+          BookRepository.BOOK_RANDOM_ID_PREFIX,
       );
     } catch (error) {
       throw this.processError(error);
@@ -170,17 +170,17 @@ class BookRepository {
       const toolTipContainer = await page.$(randomBookId);
       await page.waitForTimeout(1000);
       await toolTipContainer?.hover();
-      await toolTipContainer?.waitForSelector("section");
+      await toolTipContainer?.waitForSelector('section');
       const amazonClickEvent = toolTipContainer?.evaluateHandle((el) => {
         const amazonLink = el?.querySelector(
-          "a#buyButton"
+            'a#buyButton',
         ) as HTMLAnchorElement;
-        amazonLink.target = "";
-        amazonLink.rel = "";
+        amazonLink.target = '';
+        amazonLink.rel = '';
         return amazonLink.click();
       });
       await Promise.all([page.waitForNavigation(), amazonClickEvent]);
-      page.screenshot({ path: "hover4.png" });
+      page.screenshot({path: 'hover4.png'});
     } catch (error) {
       throw this.processError(error);
     }
@@ -196,14 +196,14 @@ class BookRepository {
   }
   async gotoAmazon(page: puppeteer.Page) {
     try {
-      //hover to odisplay the amazon tooltip
+      // hover to odisplay the amazon tooltip
 
       const amazonLinkEvent = page.evaluate((GOTO_AMAZON) => {
         const amazonLink = document.querySelector(
-          GOTO_AMAZON
+            GOTO_AMAZON,
         ) as HTMLAnchorElement;
-        amazonLink.target = "";
-        amazonLink.rel = "";
+        amazonLink.target = '';
+        amazonLink.rel = '';
         return amazonLink.click();
       }, BookRepository.GOTO_AMAZON);
 
@@ -218,18 +218,17 @@ class BookRepository {
     try {
       const cartEvent = page.evaluate((AMAZON_ADD_TO_CART) => {
         const button = document.querySelector(
-          AMAZON_ADD_TO_CART
+            AMAZON_ADD_TO_CART,
         ) as HTMLInputElement;
         return button.click();
       }, BookRepository.AMAZON_ADD_TO_CART);
 
       await Promise.all([page.waitForNavigation(), cartEvent]);
       return true;
-
     } catch (error) {
       throw new ResponseError(
-        BookRepository.BOOK_NOT_FOUND,
-        ResponseError.NOT_FOUND
+          BookRepository.BOOK_NOT_FOUND,
+          ResponseError.NOT_FOUND,
       );
     }
   }
@@ -237,21 +236,21 @@ class BookRepository {
   async getCheckOutURL(page: puppeteer.Page): Promise<ICheckoutResponse> {
     const checkoutEvent = page.evaluate((AMAZON_GOTO_CHECKOUT) => {
       const button = document.querySelector(
-        AMAZON_GOTO_CHECKOUT
+          AMAZON_GOTO_CHECKOUT,
       ) as HTMLInputElement;
       return button.click();
     }, BookRepository.AMAZON_GOTO_CHECKOUT);
 
     await Promise.all([page.waitForNavigation(), checkoutEvent]);
-    return { chkoutURL: page.url() };
+    return {checkoutURL: page.url()};
   }
 
   private processError(error: Error | any) {
     console.error(error);
     if (error instanceof puppeteer.errors.TimeoutError) {
       return new ResponseError(
-        BookRepository.PAGE_TIMEOUT_MESSAGE,
-        ResponseError.REQUEST_TIMEOUT
+          BookRepository.PAGE_TIMEOUT_MESSAGE,
+          ResponseError.REQUEST_TIMEOUT,
       );
     }
     return new ResponseError(error.message, ResponseError.UNPROCESSABLE);
