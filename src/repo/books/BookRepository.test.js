@@ -1,17 +1,15 @@
 import {getDocument} from 'pptr-testing-library';
 import {PuppeteerConfig} from '../../config/puppeteer.config';
-import ResponseError from '../../services/response/ResponseError';
 import BookRepository from './BookRepository';
-
 
 // let document;
 let page;
-
 jest.setTimeout(PuppeteerConfig.PAGE_TIMEOUT);
 
 describe('Book Repository && Puppeteer', () => {
   beforeAll(async () => {
-    page = await repository.getPage(BookRepository.BOOK_URL,
+    const repo = await BookRepository.getInstance();
+    page = await repo.getPage(BookRepository.BOOK_URL,
         BookRepository.GENRE_PAGE);
   });
 
@@ -29,7 +27,7 @@ describe('Book Repository && Puppeteer', () => {
   test('Page Genres is more than 1', async () => {
     const repo = await BookRepository.getInstance();
     const genres = await repo.getGenreProps();
-    genreURL = genres[0].link;
+    genreURL = genres[Math.floor(Math.random() * genres.length-1)].link;
     expect(genres.length).toBeGreaterThan(1);
   });
 
@@ -62,7 +60,7 @@ describe('Book Repository && Puppeteer', () => {
     expect(randomBookId).toMatch(BookRepository.BOOK_RANDOM_ID_PREFIX);
   });
 
-  test(`randomBookId ${randomBookId} exists in page`, async () => {
+  test(`selected randomBookId exists in page`, async () => {
     const doc = await getDocument(page);
     const book = await doc.$(randomBookId);
     expect(book).not.toBeNull();
@@ -96,7 +94,7 @@ describe('Book Repository && Puppeteer', () => {
   test('get checkout url returns amazon checkout', async () => {
     const repo = await BookRepository.getInstance();
     const url = await repo.getCheckOutURL(page);
-    expect(url.chkoutURL).toMatch('amazon');
+    expect(url.checkoutURL).toMatch('amazon');
   });
 
   test('should throw book not found execption upon adding book to cart',
@@ -106,13 +104,10 @@ describe('Book Repository && Puppeteer', () => {
         const page = await BookRepository.browser.newPage();
         await page.goto(url, {waitUntil: 'networkidle2'});
         await repo.gotoAmazon(page);
-
         const doc = await getDocument(page);
         const addToCart = await doc.$(BookRepository.AMAZON_ADD_TO_CART);
         await expect(repo.addToCart(page))
             .rejects.toThrow(BookRepository.BOOK_NOT_FOUND);
         expect(addToCart).toBeNull();
       });
-
-  test(`should throw ${ResponseError.REQUEST_TIMEOUT}`);
 });

@@ -19,12 +19,8 @@ BookController.get(
 
 BookController.get(
     BookRoutes.GENRE_RETRY,
-    MValidateQueryRequest(BookRequests.genreRetry),
     async (request: Request, response: Response) => {
-      const {retry} = request.body;
-      const result = await BookService.increaseTimeoutAndgetGenre(
-      retry as number,
-      );
+      const result = await BookService.increaseTimeoutAndgetGenre();
       processResponse(response, result);
     },
 );
@@ -41,11 +37,10 @@ BookController.get(
 
 BookController.get(
     BookRoutes.CHECK_OUT_RETRY,
-    MValidateQueryRequest(BookRequests.getCartURLRetry),
+    MValidateQueryRequest(BookRequests.getCartURL),
     async (request: Request, response: Response) => {
-      const {retry, genreUrl} = request.body;
+      const {genreUrl} = request.body;
       const result = await BookService.increaseTimeoutAndgetCartURL(
-      retry as number,
       genreUrl as string,
       );
       processResponse(response, result);
