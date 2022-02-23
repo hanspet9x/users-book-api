@@ -2,6 +2,7 @@ import {IServiceResponse} from '../../interface/service.type';
 import BookRepository from '../../repo/books/BookRepository';
 import {ICartResponse} from '../../repo/books/interface/cart.types';
 import {IGenreResponse} from '../../repo/books/interface/genre.types';
+import {LoggerService} from '../log/LoggerService';
 import ResponseError from '../response/ResponseError';
 
 export default class BookService {
@@ -12,6 +13,7 @@ export default class BookService {
       ).getGenreProps();
       return {hasError: false, response: genre};
     } catch (error) {
+      LoggerService.error(error);
       return {hasError: true, response: error as ResponseError};
     }
   }
@@ -30,6 +32,7 @@ export default class BookService {
       ).getCartURL(genreUrl);
       return {hasError: false, response: checkoutURL};
     } catch (error) {
+      LoggerService.error(error);
       return {hasError: true, response: error as ResponseError};
     }
   }

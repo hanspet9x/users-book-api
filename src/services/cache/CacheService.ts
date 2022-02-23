@@ -23,7 +23,5 @@ export default class CacheService {
   static getCache() {
     return CacheService.cache;
   }
-  // get genre, select genre, see all books, pick a book
-  // return the cart url
 }
 

@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import {PuppeteerConfig} from '../../config/puppeteer.config';
 import CacheService from '../../services/cache/CacheService';
+import {LoggerService} from '../../services/log/LoggerService';
 import ResponseError from '../../services/response/ResponseError';
 import {ICartResponse} from './interface/cart.types';
 import {ICheckoutResponse} from './interface/checkout.types';
@@ -196,12 +197,12 @@ class BookRepository {
   }
 
   async getSelectedBookPage(randomBookId: string, page: puppeteer.Page) {
-    console.log('Selected Book Page', randomBookId);
+    LoggerService.info('Selected Book Page', randomBookId);
     const bookURL = CacheService.get('BOOK_URL');
     if (bookURL) return {cartURL: bookURL};
     try {
       await Promise.all([page.waitForNavigation(), page.click(randomBookId)]);
-      console.log('navigated');
+      LoggerService.info('navigated');
       await page.waitForSelector(BookRepository.GOTO_AMAZON);
       // page.screenshot({path: '1 click to go amazon.png'});
     } catch (error) {
@@ -209,7 +210,7 @@ class BookRepository {
     }
   }
   async gotoAmazon(page: puppeteer.Page) {
-    console.log('GotoAmazon');
+    LoggerService.info('GotoAmazon');
     try {
       // hover to odisplay the amazon tooltip
 
@@ -232,7 +233,7 @@ class BookRepository {
   }
 
   async addToCart(page: puppeteer.Page):Promise<ICartResponse> {
-    console.log('GotoCart', page.url());
+    LoggerService.info('GotoCart', page.url());
     try {
       const cartEvent = page.evaluate((AMAZON_ADD_TO_CART) => {
         const button = document.querySelector(
@@ -255,7 +256,7 @@ class BookRepository {
   }
 
   async getCheckOutURL(page: puppeteer.Page): Promise<ICheckoutResponse> {
-    console.log('Initiate checkout', page.url());
+    LoggerService.info('Initiate checkout', page.url());
     const cartURL = page.url();
     const checkoutEvent = page.evaluate((AMAZON_GOTO_CHECKOUT) => {
       const button = document.querySelector(
@@ -266,7 +267,7 @@ class BookRepository {
 
     await Promise.all([page.waitForNavigation(), checkoutEvent]);
     // page.screenshot({path: '4 checkout url.png'});
-    console.log('checkout url', page.url());
+    LoggerService.info('checkout url', page.url());
     return {checkoutURL: page.url(), cartURL};
   }
 

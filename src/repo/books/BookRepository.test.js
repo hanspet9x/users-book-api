@@ -1,5 +1,6 @@
 import {getDocument} from 'pptr-testing-library';
 import {PuppeteerConfig} from '../../config/puppeteer.config';
+import CacheService from '../../services/cache/CacheService';
 import BookRepository from './BookRepository';
 
 // let document;
@@ -11,6 +12,7 @@ describe('Book Repository && Puppeteer', () => {
     const repo = await BookRepository.getInstance();
     page = await repo.getPage(BookRepository.BOOK_URL,
         BookRepository.GENRE_PAGE);
+    CacheService.init(100);
   });
 
   afterAll(async () => {
